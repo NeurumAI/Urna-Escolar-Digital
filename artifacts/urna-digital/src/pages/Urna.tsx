@@ -328,7 +328,7 @@ export default function Urna() {
             <div className="border-t-2 border-slate-300 pt-2 md:pt-4 mt-auto shrink-0">
               <p className="text-[8px] md:text-sm font-bold text-slate-600">Aperte a tecla:</p>
               <div className="flex flex-wrap gap-2 md:gap-8 mt-1">
-                <p className="text-[8px] md:text-sm font-medium text-slate-500"><span className="font-bold text-violet-600">CONFIRMA</span> para PROSSEGUIR</p>
+                <p className="text-[8px] md:text-sm font-medium text-slate-500"><span className="font-bold text-green-600">CONFIRMA</span> para PROSSEGUIR</p>
                 <p className="text-[8px] md:text-sm font-medium text-slate-500"><span className="font-bold text-orange-600">CORRIGE</span> para REINICIAR</p>
               </div>
             </div>
