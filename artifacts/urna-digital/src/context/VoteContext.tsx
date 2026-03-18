@@ -169,8 +169,14 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Initialize Urna ID if not exists and register it
+  // Initialize Urna ID and register it — ONLY on the /urna page
+  // Admin pages (mesario, painel, etc.) should NOT register themselves as urnas
+  const isUrnaPage = typeof window !== 'undefined' &&
+    (window.location.pathname === '/urna' || window.location.pathname.endsWith('/urna'));
+
   useEffect(() => {
+    if (!isUrnaPage) return; // mesário/admin browsers must not self-register
+
     if (!currentUrnaId) {
       const newId = `urna-${Math.random().toString(36).substr(2, 9)}`;
       localStorage.setItem('urna_device_id', newId);
@@ -205,7 +211,7 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
       };
       registerUrna();
     }
-  }, [currentUrnaId, isAuthReady]);
+  }, [currentUrnaId, isAuthReady, isUrnaPage]);
 
   // Real-time listeners
   useEffect(() => {
@@ -368,23 +374,28 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
 
   const authorizeVoter = async (cgm: string, urnaId: string) => {
     try {
-      // If there is already someone voting, reset them back to 'pendente'
-      const currentUrna = urnas.find(u => u.id === urnaId);
-      if (currentUrna?.student_matricula_ativa && currentUrna.student_matricula_ativa !== cgm) {
-        await supabase
-          .from('students')
-          .update({ status_voto: 'cinza' })
-          .eq('cgm', currentUrna.student_matricula_ativa);
-      }
+      // Reset ALL students currently voting (verde) back to pendente.
+      // Query the DB directly to avoid stale React state — this guarantees
+      // no more than 1 person is in "Votando" at any time.
+      await supabase
+        .from('students')
+        .update({ status_voto: 'cinza' })
+        .eq('status_voto', 'verde')
+        .neq('cgm', cgm);
 
+      // Clear any currently active voter on ALL urnas (single-urna setup)
       await supabase
         .from('urnas')
-        .update({
-          student_matricula_ativa: cgm,
-          status: 'votando'
-        })
+        .update({ student_matricula_ativa: null, status: 'aguardando' })
+        .neq('id', 'placeholder'); // update all rows
+
+      // Set the new voter on the correct urna
+      await supabase
+        .from('urnas')
+        .update({ student_matricula_ativa: cgm, status: 'votando' })
         .eq('id', urnaId);
 
+      // Mark the new voter as voting
       await supabase
         .from('students')
         .update({ status_voto: 'verde' })

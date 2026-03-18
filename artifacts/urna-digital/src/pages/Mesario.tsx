@@ -28,11 +28,13 @@ const STATUS_LABELS: Record<Status, string> = {
 };
 
 export default function Mesario() {
-  const { eleitores, authorizeVoter, urnas, isElectionOpen, currentUrnaId } = useVote();
+  const { eleitores, authorizeVoter, urnas, isElectionOpen } = useVote();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedTurmas, setExpandedTurmas] = useState<string[]>([]);
 
-  const selectedUrnaId = currentUrnaId || (urnas.length > 0 ? urnas[0].id : null);
+  // Always use the first registered urna from the DB list.
+  // The mesário's own browser ID must NOT be used — it's not a voting urna.
+  const selectedUrnaId = urnas.length > 0 ? urnas[0].id : null;
 
   const toggleTurma = (turma: string) => {
     setExpandedTurmas(prev => 
@@ -97,22 +99,28 @@ export default function Mesario() {
             />
           </div>
 
-          <div className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-2xl border text-sm font-bold",
-            selectedUrnaId && urnas.find(u => u.id === selectedUrnaId)?.status === 'votando'
-              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-              : selectedUrnaId
-                ? "bg-slate-50 border-slate-200 text-slate-600"
-                : "bg-amber-50 border-amber-200 text-amber-600"
-          )}>
-            <div className={cn(
-              "w-2.5 h-2.5 rounded-full shrink-0",
-              selectedUrnaId && urnas.find(u => u.id === selectedUrnaId)?.status === 'votando'
-                ? "bg-emerald-500 animate-pulse"
-                : selectedUrnaId ? "bg-slate-400" : "bg-amber-400"
-            )} />
-            {selectedUrnaId ? "Urna conectada" : "Aguardando urna..."}
-          </div>
+          {(() => {
+            const urna = urnas[0];
+            const isVotando = urna?.status === 'votando';
+            return (
+              <div className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-2xl border text-sm font-bold",
+                isVotando
+                  ? "bg-amber-50 border-amber-200 text-amber-700"
+                  : urna
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                    : "bg-slate-50 border-slate-200 text-slate-500"
+              )}>
+                <div className={cn(
+                  "w-2.5 h-2.5 rounded-full shrink-0",
+                  isVotando ? "bg-amber-500 animate-pulse" : urna ? "bg-emerald-500" : "bg-slate-300"
+                )} />
+                <span>
+                  {isVotando ? "Urna em uso" : urna ? "Urna disponível" : "Aguardando urna..."}
+                </span>
+              </div>
+            );
+          })()}
         </div>
       </header>
 
