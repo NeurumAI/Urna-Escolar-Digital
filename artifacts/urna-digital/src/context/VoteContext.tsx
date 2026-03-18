@@ -233,7 +233,21 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
 
         if (students) setEleitores(students.map(normalizeRecord));
         if (candidates) setCandidatos(candidates.map(normalizeRecord));
-        if (urnasData) setUrnas(urnasData);
+        if (urnasData) {
+          setUrnas(urnasData);
+          // Restore active voter on page load/refresh
+          if (currentUrnaId) {
+            const myUrna = urnasData.find((u: any) => u.id === currentUrnaId);
+            if (myUrna?.student_matricula_ativa) {
+              const { data: student } = await supabase
+                .from('students')
+                .select('*')
+                .eq('cgm', myUrna.student_matricula_ativa)
+                .single();
+              if (student) setActiveVoter(normalizeRecord(student));
+            }
+          }
+        }
         if (activeElection) {
           setIsElectionOpenLocal(activeElection.status === 'aberta');
           setSchoolName(activeElection.school_name || '');
@@ -354,6 +368,15 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
 
   const authorizeVoter = async (cgm: string, urnaId: string) => {
     try {
+      // If there is already someone voting, reset them back to 'pendente'
+      const currentUrna = urnas.find(u => u.id === urnaId);
+      if (currentUrna?.student_matricula_ativa && currentUrna.student_matricula_ativa !== cgm) {
+        await supabase
+          .from('students')
+          .update({ status_voto: 'cinza' })
+          .eq('cgm', currentUrna.student_matricula_ativa);
+      }
+
       await supabase
         .from('urnas')
         .update({
@@ -361,7 +384,7 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
           status: 'votando'
         })
         .eq('id', urnaId);
-      
+
       await supabase
         .from('students')
         .update({ status_voto: 'verde' })

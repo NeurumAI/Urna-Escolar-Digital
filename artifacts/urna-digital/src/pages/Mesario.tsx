@@ -22,7 +22,7 @@ type Status = 'cinza' | 'verde' | 'azul' | 'vermelho';
 
 const STATUS_LABELS: Record<Status, string> = {
   'cinza': 'Pendente',
-  'verde': 'Presente',
+  'verde': 'Votando',
   'azul': 'Votou',
   'vermelho': 'Ausente'
 };
@@ -54,7 +54,7 @@ export default function Mesario() {
 
   const getStatusColor = (status: Status) => {
     switch (status) {
-      case 'verde': return 'text-blue-600 bg-blue-50 border-blue-100';
+      case 'verde': return 'text-amber-700 bg-amber-50 border-amber-200';
       case 'azul': return 'text-violet-600 bg-violet-50 border-violet-100';
       case 'vermelho': return 'text-rose-600 bg-rose-50 border-rose-100';
       default: return 'text-slate-400 bg-slate-50 border-slate-100';
@@ -149,9 +149,18 @@ export default function Mesario() {
                     <div className="flex items-center gap-4">
                       <div className={cn(
                         "w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
-                        e.status_voto === 'azul' ? "bg-violet-500 border-violet-500 text-white" : "border-slate-200 text-slate-300"
+                        e.status_voto === 'azul'
+                          ? "bg-violet-500 border-violet-500 text-white"
+                          : e.status_voto === 'verde'
+                            ? "bg-amber-400 border-amber-400 text-white animate-pulse"
+                            : "border-slate-200 text-slate-300"
                       )}>
-                        {e.status_voto === 'azul' ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                        {e.status_voto === 'azul'
+                          ? <CheckCircle2 size={20} />
+                          : e.status_voto === 'verde'
+                            ? <Play size={16} fill="currentColor" />
+                            : <Circle size={20} />
+                        }
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-slate-800 truncate">{e.nome}</p>
@@ -172,14 +181,14 @@ export default function Mesario() {
                           disabled={!selectedUrnaId || !isElectionOpen}
                           onClick={() => selectedUrnaId && authorizeVoter(e.cgm, selectedUrnaId)}
                           className={cn(
-                            "flex-1 sm:flex-none p-2 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold",
+                            "flex-1 sm:flex-none px-3 py-2 rounded-xl border transition-all flex items-center justify-center gap-2 text-xs font-bold",
                             (!selectedUrnaId || !isElectionOpen)
                               ? "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed"
                               : "bg-white text-slate-900 border-slate-200 hover:bg-slate-50"
                           )}
                         >
                           <Play size={14} fill="currentColor" />
-                          {urnas.find(u => u.student_matricula_ativa === e.cgm) ? "Liberado" : "Liberar"}
+                          Liberar
                         </button>
                       )}
                     </div>
