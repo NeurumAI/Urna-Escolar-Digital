@@ -235,9 +235,9 @@ export default function Urna() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-slate-200 flex items-center justify-center p-2 sm:p-4 md:p-8">
+    <div className="fixed inset-0 bg-slate-200 flex items-center justify-center p-2 sm:p-4 md:p-8 overflow-hidden">
       {/* CORPO DA URNA */}
-      <div className="bg-[#f0f0f0] rounded-xl shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row w-full max-w-6xl md:h-full md:max-h-[650px] overflow-hidden border-b-[8px] md:border-b-[12px] border-slate-400 relative">
+      <div className="bg-[#f0f0f0] rounded-xl shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] flex flex-col md:flex-row w-full max-w-6xl h-full md:max-h-[650px] overflow-hidden border-b-[8px] md:border-b-[12px] border-slate-400 relative">
         
         {/* LADO ESQUERDO: TELA */}
         <div className="flex-[1.5] p-3 sm:p-6 md:p-8 flex flex-col min-h-0">
@@ -252,7 +252,7 @@ export default function Urna() {
                   </p>
                   {activeVoter && (
                     <p className="text-[9px] md:text-xs font-bold text-violet-600 uppercase tracking-widest truncate">
-                      · {activeVoter.nome.split(' ').slice(0, 2).join(' ')}
+                      · {activeVoter.nome}
                     </p>
                   )}
                 </div>
@@ -290,25 +290,25 @@ export default function Urna() {
             </div>
 
             {/* Informações do Candidato */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="h-20 md:h-32 overflow-hidden">
               {isBranco ? (
-                <div className="text-center py-2 md:py-8">
-                  <h3 className="text-2xl md:text-6xl font-black text-slate-900">VOTO EM BRANCO</h3>
+                <div className="text-center py-2 md:py-4">
+                  <h3 className="text-2xl md:text-5xl font-black text-slate-900">VOTO EM BRANCO</h3>
                 </div>
               ) : candidato === 'nulo' ? (
                 <div className="space-y-1 md:space-y-2">
-                  <h3 className="text-xl md:text-4xl font-black text-slate-900">NÚMERO ERRADO</h3>
-                  <p className="text-base md:text-2xl font-bold text-slate-500 uppercase">VOTO NULO</p>
+                  <h3 className="text-xl md:text-3xl font-black text-slate-900">NÚMERO ERRADO</h3>
+                  <p className="text-base md:text-xl font-bold text-slate-500 uppercase">VOTO NULO</p>
                 </div>
               ) : candidato ? (
-                <div className="space-y-2 md:space-y-4">
+                <div className="space-y-2 md:space-y-3">
                   <div className="space-y-0.5 md:space-y-1">
-                    <p className="text-[8px] md:text-sm font-bold text-slate-500 uppercase">Nome:</p>
-                    <p className="text-lg md:text-3xl font-black text-slate-900 uppercase leading-tight truncate">{candidato.nome}</p>
+                    <p className="text-[8px] md:text-xs font-bold text-slate-500 uppercase">Nome:</p>
+                    <p className="text-sm md:text-xl font-black text-slate-900 uppercase leading-tight line-clamp-1">{candidato.nome}</p>
                   </div>
                   <div className="space-y-0.5 md:space-y-1">
-                    <p className="text-[8px] md:text-sm font-bold text-slate-500 uppercase">Turma/Grupo:</p>
-                    <p className="text-base md:text-2xl font-bold text-slate-700 uppercase truncate">{candidato.grupo}</p>
+                    <p className="text-[8px] md:text-xs font-bold text-slate-500 uppercase">Turma/Grupo:</p>
+                    <p className="text-xs md:text-lg font-bold text-slate-700 uppercase truncate">{candidato.grupo}</p>
                   </div>
                 </div>
               ) : null}
@@ -340,12 +340,12 @@ export default function Urna() {
           </div>
 
           {/* Teclado Numérico */}
-          <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-12 shrink-0">
+          <div className="grid grid-cols-3 gap-2 md:gap-3 mb-4 md:mb-8 shrink-0 w-full">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
               <button
                 key={n}
                 onClick={() => handleNumber(n.toString())}
-                className="w-10 h-10 md:w-16 md:h-12 bg-[#1a1a1a] text-white text-lg md:text-2xl font-bold rounded shadow-[inset_0_2px_4px_rgba(255,255,255,0.1),0_4px_8px_rgba(0,0,0,0.5)] active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center border border-white/5"
+                className="h-10 md:h-14 bg-[#1a1a1a] text-white text-lg md:text-2xl font-bold rounded shadow-[inset_0_2px_4px_rgba(255,255,255,0.1),0_4px_8px_rgba(0,0,0,0.5)] active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center border border-white/5"
               >
                 {n}
               </button>
@@ -353,7 +353,7 @@ export default function Urna() {
             <div />
             <button
               onClick={() => handleNumber('0')}
-              className="w-10 h-10 md:w-16 md:h-12 bg-[#1a1a1a] text-white text-lg md:text-2xl font-bold rounded shadow-[inset_0_2px_4px_rgba(255,255,255,0.1),0_4px_8px_rgba(0,0,0,0.5)] active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center border border-white/5"
+              className="h-10 md:h-14 bg-[#1a1a1a] text-white text-lg md:text-2xl font-bold rounded shadow-[inset_0_2px_4px_rgba(255,255,255,0.1),0_4px_8px_rgba(0,0,0,0.5)] active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center border border-white/5"
             >
               0
             </button>
@@ -370,13 +370,13 @@ export default function Urna() {
             </button>
             <button
               onClick={handleCorrige}
-              className="h-10 md:h-14 bg-[#f37021] text-black font-bold text-[8px] md:text-xs rounded shadow-lg active:translate-y-0.5 transition-all uppercase flex items-center justify-center px-1 text-center"
+              className="h-10 md:h-14 bg-[#ff8c00] text-black font-bold text-[8px] md:text-xs rounded shadow-lg active:translate-y-0.5 transition-all uppercase flex items-center justify-center px-1 text-center"
             >
               Corrige
             </button>
             <button
               onClick={handleConfirma}
-              className={`h-12 md:h-16 bg-violet-600 text-white font-black text-[10px] md:text-sm rounded shadow-lg active:translate-y-0.5 transition-all uppercase flex items-center justify-center px-1 text-center col-span-1 ${
+              className={`h-10 md:h-14 bg-[#22c55e] text-black font-black text-[8px] md:text-xs rounded shadow-lg active:translate-y-0.5 transition-all uppercase flex items-center justify-center px-1 text-center col-span-1 ${
                 (numero.length === 5 || isBranco) ? 'opacity-100' : 'opacity-80'
               }`}
             >
