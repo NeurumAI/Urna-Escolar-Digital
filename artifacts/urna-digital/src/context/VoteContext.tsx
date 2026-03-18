@@ -374,22 +374,25 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
 
   const authorizeVoter = async (cgm: string, urnaId: string) => {
     try {
-      // Reset ALL students currently voting (verde) back to pendente.
-      // Query the DB directly to avoid stale React state — this guarantees
-      // no more than 1 person is in "Votando" at any time.
-      await supabase
+      // CRITICAL: Reset ANY student with verde status back to cinza
+      // This ensures only 1 person can be voting at a time
+      const { data: activeVoters } = await supabase
         .from('students')
-        .update({ status_voto: 'cinza' })
-        .eq('status_voto', 'verde')
-        .neq('cgm', cgm);
+        .select('cgm')
+        .eq('status_voto', 'verde');
 
-      // Clear any currently active voter on ALL urnas (single-urna setup)
-      await supabase
-        .from('urnas')
-        .update({ student_matricula_ativa: null, status: 'aguardando' })
-        .neq('id', 'placeholder'); // update all rows
+      if (activeVoters && activeVoters.length > 0) {
+        for (const voter of activeVoters) {
+          if (voter.cgm !== cgm) {
+            await supabase
+              .from('students')
+              .update({ status_voto: 'cinza' })
+              .eq('cgm', voter.cgm);
+          }
+        }
+      }
 
-      // Set the new voter on the correct urna
+      // Set the new voter as voting on this urna
       await supabase
         .from('urnas')
         .update({ student_matricula_ativa: cgm, status: 'votando' })
@@ -599,6 +602,58 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const cleanupUrnas = async () => {
+    try {
+      console.log('Starting urnas cleanup...');
+      
+      // Get all urnas
+      const { data: allUrnas, error: fetchError } = await supabase
+        .from('urnas')
+        .select('id, status')
+        .order('created_at', { ascending: true });
+
+      if (fetchError) throw fetchError;
+      if (!allUrnas || allUrnas.length === 0) {
+        console.log('No urnas found');
+        return;
+      }
+
+      console.log(`Found ${allUrnas.length} urnas, keeping only the first one`);
+
+      // Delete all urnas except the first
+      const idsToDelete = allUrnas.slice(1).map(u => u.id);
+      if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('urnas')
+          .delete()
+          .in('id', idsToDelete);
+        if (deleteError) throw deleteError;
+        console.log(`Deleted ${idsToDelete.length} urnas`);
+      }
+
+      // Reset the kept urna to aguardando
+      const keepUrnaId = allUrnas[0].id;
+      const { error: updateError } = await supabase
+        .from('urnas')
+        .update({ student_matricula_ativa: null, status: 'aguardando' })
+        .eq('id', keepUrnaId);
+      if (updateError) throw updateError;
+      console.log(`Reset urna ${keepUrnaId} to aguardando`);
+
+      // Reset all students to cinza (except those who are vermelho/absent)
+      const { error: resetError } = await supabase
+        .from('students')
+        .update({ status_voto: 'cinza' })
+        .neq('status_voto', 'vermelho');
+      if (resetError) throw resetError;
+      console.log('Reset all students to cinza');
+
+      console.log('✅ Urnas cleanup complete');
+    } catch (error) {
+      handleSupabaseError(error, OperationType.WRITE, 'urnas cleanup');
+    }
+  };
+
   const addEleitor = async (e: Eleitor) => {
     try {
       await supabase.from('students').upsert(e);
@@ -732,6 +787,7 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
       resetVotes,
       resetStudents,
       resetCandidates,
+      cleanupUrnas,
       archiveCurrentElection,
       deleteFromHistory,
       addEleitor,
