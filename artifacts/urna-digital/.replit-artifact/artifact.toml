@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Urna Escolar"
+version = "1.0.0"
+id = "artifacts/urna-digital"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 24485
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/urna-digital run dev"
+
+[services.env]
+PORT = "24485"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/urna-digital", "run", "build"]
+publicDir = "artifacts/urna-digital/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
