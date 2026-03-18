@@ -62,7 +62,7 @@ export default function Urna() {
   const stepIndex = steps.indexOf(step);
   const totalSteps = steps.length;
 
-  // Verifica se um candidato Representante pertence à turma do eleitor
+  // Verifica se um candidato Representante ou Professor pertence à turma do eleitor
   const isRepresentanteElegivel = (c: any): boolean => {
     if (!activeVoter) return false;
     const grupoUpper = c.grupo.trim().toUpperCase();
@@ -75,6 +75,13 @@ export default function Urna() {
     return grupoEndsWithTurma && yearsMatch;
   };
 
+  // Para professor, também verifica série-turma
+  const isProfessorElegivel = (c: any): boolean => {
+    if (!activeVoter || activeVoter.tipo !== 'aluno') return false;
+    // Professor deve ser da mesma série-turma
+    return isRepresentanteElegivel(c);
+  };
+
   const handleNumber = useCallback((num: string) => {
     if (numero.length < 5 && !isBranco) {
       const novoNumero = numero + num;
@@ -83,8 +90,11 @@ export default function Urna() {
       
       if (novoNumero.length === 5) {
         let found: any = candidatos.find(c => c.numero === novoNumero && c.cargo === step);
-        // Para Representante, o candidato deve ser da turma do eleitor
+        // Para Representante e Professor, o candidato deve ser da turma do eleitor
         if (found && step === 'Representante' && !isRepresentanteElegivel(found)) {
+          found = undefined;
+        }
+        if (found && step === 'Professor' && !isProfessorElegivel(found)) {
           found = undefined;
         }
         setCandidato(found || 'nulo');

@@ -28,9 +28,20 @@ const STATUS_LABELS: Record<Status, string> = {
 };
 
 export default function Mesario() {
-  const { eleitores, authorizeVoter, urnas, isElectionOpen } = useVote();
+  const { eleitores, authorizeVoter, urnas, isElectionOpen, addEleitor } = useVote();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedTurmas, setExpandedTurmas] = useState<string[]>([]);
+  
+  // States for add eleitor modal
+  const [showModal, setShowModal] = useState(false);
+  const [eleitorType, setEleitorType] = useState<'aluno' | 'professor' | 'funcionario'>('aluno');
+  const [formData, setFormData] = useState({
+    nome: '',
+    cgm: '',
+    serie: '',
+    turma: '',
+    sexo: 'M' as 'M' | 'F'
+  });
 
   // Always use the single fixed urna (MAIN_URNA_001)
   const MAIN_URNA_ID = 'MAIN_URNA_001';
@@ -74,6 +85,31 @@ export default function Mesario() {
     });
     return filtered;
   }, [turmas, searchTerm]);
+
+  const handleAddEleitor = async () => {
+    if (!formData.nome || !formData.cgm) return;
+
+    const newEleitor = {
+      cgm: formData.cgm,
+      nome: formData.nome,
+      idade: 15,
+      sexo: formData.sexo,
+      serie: eleitorType === 'aluno' ? formData.serie : '',
+      turma: eleitorType === 'aluno' ? formData.turma : '',
+      turno: 'MANHÃ',
+      tipo: eleitorType,
+      status_voto: 'cinza' as const
+    };
+
+    try {
+      await addEleitor(newEleitor);
+      setShowModal(false);
+      setFormData({ nome: '', cgm: '', serie: '', turma: '', sexo: 'M' });
+      setEleitorType('aluno');
+    } catch (error) {
+      console.error('Error adding eleitor:', error);
+    }
+  };
 
   return (
     <motion.div 
@@ -209,11 +245,143 @@ export default function Mesario() {
       </div>
 
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-30">
-        <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-xl shadow-slate-200 flex items-center justify-center gap-2 hover:bg-slate-800 transition-all">
+        <button 
+          onClick={() => setShowModal(true)}
+          className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-xl shadow-slate-200 flex items-center justify-center gap-2 hover:bg-slate-800 transition-all"
+        >
           <UserPlus size={20} />
           Adicionar Eleitor Manual
         </button>
       </div>
+
+      {/* MODAL PARA ADICIONAR ELEITOR */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full space-y-6 shadow-2xl">
+            <div>
+              <h3 className="text-xl font-bold text-slate-900">Adicionar Eleitor Manual</h3>
+              <p className="text-sm text-slate-500 mt-1">Inscreva um membro da comunidade escolar</p>
+            </div>
+
+            {/* Tipo de Eleitor */}
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-slate-700">Tipo</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['aluno', 'professor', 'funcionario'] as const).map(type => (
+                  <button
+                    key={type}
+                    onClick={() => {
+                      setEleitorType(type);
+                      setFormData({ ...formData, serie: '', turma: '' });
+                    }}
+                    className={cn(
+                      "py-3 px-3 rounded-xl font-bold text-sm transition-all capitalize",
+                      eleitorType === type
+                        ? "bg-slate-900 text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    )}
+                  >
+                    {type === 'aluno' ? 'Aluno' : type === 'professor' ? 'Professor' : 'Funcionário'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Nome */}
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-slate-700">Nome Completo</label>
+              <input
+                type="text"
+                placeholder="Ex: João da Silva"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
+            </div>
+
+            {/* CGM */}
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-slate-700">CGM (Matrícula)</label>
+              <input
+                type="text"
+                placeholder="Ex: 123456789"
+                value={formData.cgm}
+                onChange={(e) => setFormData({ ...formData, cgm: e.target.value })}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
+              />
+            </div>
+
+            {/* Campos específicos para Aluno */}
+            {eleitorType === 'aluno' && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-slate-700">Série</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 1ª série"
+                      value={formData.serie}
+                      onChange={(e) => setFormData({ ...formData, serie: e.target.value })}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-slate-700">Turma</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: A"
+                      value={formData.turma}
+                      onChange={(e) => setFormData({ ...formData, turma: e.target.value })}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-slate-700">Sexo</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['M', 'F'] as const).map(sex => (
+                      <button
+                        key={sex}
+                        onClick={() => setFormData({ ...formData, sexo: sex })}
+                        className={cn(
+                          "py-3 px-4 rounded-xl font-bold text-sm transition-all",
+                          formData.sexo === sex
+                            ? "bg-slate-900 text-white"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        )}
+                      >
+                        {sex === 'M' ? 'Masculino' : 'Feminino'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Botões de Ação */}
+            <div className="flex gap-3 pt-4 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setFormData({ nome: '', cgm: '', serie: '', turma: '', sexo: 'M' });
+                  setEleitorType('aluno');
+                }}
+                className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAddEleitor}
+                disabled={!formData.nome || !formData.cgm || (eleitorType === 'aluno' && (!formData.serie || !formData.turma))}
+                className="flex-1 py-3 px-4 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Adicionar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
