@@ -30,7 +30,6 @@ export default function Configuracoes() {
     resetVotes,
     resetStudents,
     resetCandidates,
-    cleanupUrnas,
     isAdmin,
     urnas,
     resetActiveVoter,
@@ -247,19 +246,6 @@ export default function Configuracoes() {
           {/* DANGER ZONE */}
           {isAdmin && (
             <section className="bg-rose-50 p-6 rounded-2xl border border-rose-100 space-y-6">
-              <div className="space-y-1">
-                <h3 className="font-bold text-amber-700">Manutenção de Urnas</h3>
-                <p className="text-xs text-amber-600">Limpar registros antigos e manter apenas 1 urna ativa.</p>
-              </div>
-              
-              <button 
-                onClick={cleanupUrnas}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-amber-600 border border-amber-200 rounded-xl font-bold hover:bg-amber-50 transition-all"
-              >
-                <Trash2 size={16} />
-                Limpar Urnas Antigas
-              </button>
-
               <div className="space-y-1">
                 <h3 className="font-bold text-rose-800">Zona de Perigo</h3>
                 <p className="text-xs text-rose-600">Ações irreversíveis que afetam toda a eleição.</p>

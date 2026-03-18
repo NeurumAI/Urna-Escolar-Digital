@@ -92,8 +92,12 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentUrnaId, setCurrentUrnaId] = useState<string | null>(null);
 
   const clearError = () => setError(null);
+  
+  // FIXED: Always use this single urna ID across all browsers
+  const MAIN_URNA_ID = 'MAIN_URNA_001';
 
   function normalizeRecord<T extends Record<string, any>>(record: T): T {
     const result: any = {};
@@ -127,9 +131,6 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
       throw new Error(JSON.stringify(errInfo));
     }
   }
-  const [currentUrnaId, setCurrentUrnaId] = useState<string | null>(() => {
-    return localStorage.getItem('urna_device_id');
-  });
 
   // Track auth state - sem login Google, admin sempre ativo
   useEffect(() => {
@@ -169,49 +170,45 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Initialize Urna ID and register it — ONLY on the /urna page
-  // Admin pages (mesario, painel, etc.) should NOT register themselves as urnas
-  const isUrnaPage = typeof window !== 'undefined' &&
-    (window.location.pathname === '/urna' || window.location.pathname.endsWith('/urna'));
-
+  // Initialize the SINGLE fixed urna on app startup
   useEffect(() => {
-    if (!isUrnaPage) return; // mesário/admin browsers must not self-register
+    if (!isAuthReady) return;
 
-    if (!currentUrnaId) {
-      const newId = `urna-${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem('urna_device_id', newId);
-      setCurrentUrnaId(newId);
-    } else if (isAuthReady) {
-      // Register this urna in Supabase if not already there
-      const registerUrna = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('urnas')
-            .select('*')
-            .eq('id', currentUrnaId)
-            .single();
+    const initializeMainUrna = async () => {
+      try {
+        // Check if main urna exists
+        const { data: existing, error: checkError } = await supabase
+          .from('urnas')
+          .select('*')
+          .eq('id', MAIN_URNA_ID)
+          .single();
 
-          if (error && error.code === 'PGRST116') { // Not found
-            await supabase.from('urnas').insert({
-              id: currentUrnaId,
-              status: 'aguardando',
-              student_matricula_ativa: null,
-              last_active: new Date().toISOString()
-            });
+        if (checkError && checkError.code === 'PGRST116') {
+          // Urna doesn't exist, create it
+          const { error: insertError } = await supabase.from('urnas').insert({
+            id: MAIN_URNA_ID,
+            status: 'aguardando',
+            student_matricula_ativa: null,
+            last_active: new Date().toISOString()
+          });
+          if (insertError) {
+            console.error('Error creating main urna:', insertError);
           } else {
-            // Update last active
-            await supabase
-              .from('urnas')
-              .update({ last_active: new Date().toISOString() })
-              .eq('id', currentUrnaId);
+            console.log('✅ Main urna created');
+            setCurrentUrnaId(MAIN_URNA_ID);
           }
-        } catch (error) {
-          console.error('Error registering urna:', error);
+        } else if (!checkError) {
+          // Urna exists, just use it
+          console.log('✅ Main urna exists, using it');
+          setCurrentUrnaId(MAIN_URNA_ID);
         }
-      };
-      registerUrna();
-    }
-  }, [currentUrnaId, isAuthReady, isUrnaPage]);
+      } catch (error) {
+        console.error('Error initializing main urna:', error);
+      }
+    };
+
+    initializeMainUrna();
+  }, [isAuthReady, MAIN_URNA_ID]);
 
   // Real-time listeners
   useEffect(() => {
@@ -374,35 +371,45 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
 
   const authorizeVoter = async (cgm: string, urnaId: string) => {
     try {
-      // CRITICAL: Reset ANY student with verde status back to cinza
-      // This ensures only 1 person can be voting at a time
-      const { data: activeVoters } = await supabase
+      // CRITICAL: Must atomically reset ALL voting students and set new voter
+      // Step 1: Get all students currently voting (verde)
+      const { data: allVoting } = await supabase
         .from('students')
         .select('cgm')
         .eq('status_voto', 'verde');
 
-      if (activeVoters && activeVoters.length > 0) {
-        for (const voter of activeVoters) {
+      // Step 2: Reset all other verde voters back to cinza in sequence
+      if (allVoting && allVoting.length > 0) {
+        for (const voter of allVoting) {
           if (voter.cgm !== cgm) {
             await supabase
               .from('students')
               .update({ status_voto: 'cinza' })
-              .eq('cgm', voter.cgm);
+              .eq('cgm', voter.cgm)
+              .select(); // Force immediate execution
           }
         }
       }
 
-      // Set the new voter as voting on this urna
+      // Step 3: Update the urna with new voter
       await supabase
         .from('urnas')
-        .update({ student_matricula_ativa: cgm, status: 'votando' })
-        .eq('id', urnaId);
+        .update({ 
+          student_matricula_ativa: cgm, 
+          status: 'votando',
+          last_active: new Date().toISOString()
+        })
+        .eq('id', urnaId)
+        .select(); // Force immediate execution
 
-      // Mark the new voter as voting
+      // Step 4: Mark the new voter as voting
       await supabase
         .from('students')
         .update({ status_voto: 'verde' })
-        .eq('cgm', cgm);
+        .eq('cgm', cgm)
+        .select(); // Force immediate execution
+
+      console.log(`✅ Authorized voter ${cgm} on urna ${urnaId}`);
     } catch (error) {
       handleSupabaseError(error, OperationType.WRITE, `urnas/${urnaId} or students/${cgm}`);
     }
@@ -602,58 +609,6 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const cleanupUrnas = async () => {
-    try {
-      console.log('Starting urnas cleanup...');
-      
-      // Get all urnas
-      const { data: allUrnas, error: fetchError } = await supabase
-        .from('urnas')
-        .select('id, status')
-        .order('created_at', { ascending: true });
-
-      if (fetchError) throw fetchError;
-      if (!allUrnas || allUrnas.length === 0) {
-        console.log('No urnas found');
-        return;
-      }
-
-      console.log(`Found ${allUrnas.length} urnas, keeping only the first one`);
-
-      // Delete all urnas except the first
-      const idsToDelete = allUrnas.slice(1).map(u => u.id);
-      if (idsToDelete.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('urnas')
-          .delete()
-          .in('id', idsToDelete);
-        if (deleteError) throw deleteError;
-        console.log(`Deleted ${idsToDelete.length} urnas`);
-      }
-
-      // Reset the kept urna to aguardando
-      const keepUrnaId = allUrnas[0].id;
-      const { error: updateError } = await supabase
-        .from('urnas')
-        .update({ student_matricula_ativa: null, status: 'aguardando' })
-        .eq('id', keepUrnaId);
-      if (updateError) throw updateError;
-      console.log(`Reset urna ${keepUrnaId} to aguardando`);
-
-      // Reset all students to cinza (except those who are vermelho/absent)
-      const { error: resetError } = await supabase
-        .from('students')
-        .update({ status_voto: 'cinza' })
-        .neq('status_voto', 'vermelho');
-      if (resetError) throw resetError;
-      console.log('Reset all students to cinza');
-
-      console.log('✅ Urnas cleanup complete');
-    } catch (error) {
-      handleSupabaseError(error, OperationType.WRITE, 'urnas cleanup');
-    }
-  };
-
   const addEleitor = async (e: Eleitor) => {
     try {
       await supabase.from('students').upsert(e);
@@ -787,7 +742,6 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
       resetVotes,
       resetStudents,
       resetCandidates,
-      cleanupUrnas,
       archiveCurrentElection,
       deleteFromHistory,
       addEleitor,

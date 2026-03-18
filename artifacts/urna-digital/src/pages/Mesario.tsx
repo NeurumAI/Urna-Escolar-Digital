@@ -32,9 +32,9 @@ export default function Mesario() {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedTurmas, setExpandedTurmas] = useState<string[]>([]);
 
-  // Always use the first registered urna from the DB list.
-  // The mesário's own browser ID must NOT be used — it's not a voting urna.
-  const selectedUrnaId = urnas.length > 0 ? urnas[0].id : null;
+  // Always use the single fixed urna (MAIN_URNA_001)
+  const MAIN_URNA_ID = 'MAIN_URNA_001';
+  const selectedUrnaId = MAIN_URNA_ID;
 
   const toggleTurma = (turma: string) => {
     setExpandedTurmas(prev => 
