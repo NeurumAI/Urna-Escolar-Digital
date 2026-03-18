@@ -40,7 +40,9 @@ export default function Mesario() {
     cgm: '',
     serie: '',
     turma: '',
-    sexo: 'M' as 'M' | 'F'
+    sexo: 'M' as 'M' | 'F',
+    curso: '',
+    atribuicao: ''
   });
 
   // Always use the single fixed urna (MAIN_URNA_001)
@@ -104,7 +106,7 @@ export default function Mesario() {
     try {
       await addEleitor(newEleitor);
       setShowModal(false);
-      setFormData({ nome: '', cgm: '', serie: '', turma: '', sexo: 'M' });
+      setFormData({ nome: '', cgm: '', serie: '', turma: '', sexo: 'M', curso: '', atribuicao: '' });
       setEleitorType('aluno');
     } catch (error) {
       console.error('Error adding eleitor:', error);
@@ -256,16 +258,16 @@ export default function Mesario() {
 
       {/* MODAL PARA ADICIONAR ELEITOR */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full space-y-6 shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl my-auto">
             <div>
-              <h3 className="text-xl font-bold text-slate-900">Adicionar Eleitor Manual</h3>
-              <p className="text-sm text-slate-500 mt-1">Inscreva um membro da comunidade escolar</p>
+              <h3 className="text-lg font-bold text-slate-900">Adicionar Eleitor Manual</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Inscreva um membro da comunidade escolar</p>
             </div>
 
             {/* Tipo de Eleitor */}
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700">Tipo</label>
+              <label className="block text-xs font-bold text-slate-700">Tipo</label>
               <div className="grid grid-cols-3 gap-2">
                 {(['aluno', 'professor', 'funcionario'] as const).map(type => (
                   <button
@@ -275,7 +277,7 @@ export default function Mesario() {
                       setFormData({ ...formData, serie: '', turma: '' });
                     }}
                     className={cn(
-                      "py-3 px-3 rounded-xl font-bold text-sm transition-all capitalize",
+                      "py-2 px-2 rounded-lg font-bold text-xs transition-all capitalize",
                       eleitorType === type
                         ? "bg-slate-900 text-white"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -288,70 +290,70 @@ export default function Mesario() {
             </div>
 
             {/* Nome */}
-            <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700">Nome Completo</label>
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700">Nome Completo</label>
               <input
                 type="text"
                 placeholder="Ex: João da Silva"
                 value={formData.nome}
                 onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
               />
             </div>
 
             {/* CGM */}
-            <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700">CGM (Matrícula)</label>
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700">CGM (Matrícula)</label>
               <input
                 type="text"
                 placeholder="Ex: 123456789"
                 value={formData.cgm}
                 onChange={(e) => setFormData({ ...formData, cgm: e.target.value })}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
               />
             </div>
 
             {/* Campos específicos para Aluno */}
             {eleitorType === 'aluno' && (
               <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-bold text-slate-700">Série</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">Série</label>
                     <input
                       type="text"
-                      placeholder="Ex: 1ª série"
+                      placeholder="Ex: 1ª"
                       value={formData.serie}
                       onChange={(e) => setFormData({ ...formData, serie: e.target.value })}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-bold text-slate-700">Turma</label>
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">Turma</label>
                     <input
                       type="text"
                       placeholder="Ex: A"
                       value={formData.turma}
                       onChange={(e) => setFormData({ ...formData, turma: e.target.value })}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-bold text-slate-700">Sexo</label>
-                  <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-slate-700">Sexo</label>
+                  <div className="grid grid-cols-2 gap-2">
                     {(['M', 'F'] as const).map(sex => (
                       <button
                         key={sex}
                         onClick={() => setFormData({ ...formData, sexo: sex })}
                         className={cn(
-                          "py-3 px-4 rounded-xl font-bold text-sm transition-all",
+                          "py-2 px-3 rounded-lg font-bold text-xs transition-all",
                           formData.sexo === sex
                             ? "bg-slate-900 text-white"
                             : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                         )}
                       >
-                        {sex === 'M' ? 'Masculino' : 'Feminino'}
+                        {sex === 'M' ? 'Masc.' : 'Fem.'}
                       </button>
                     ))}
                   </div>
@@ -359,22 +361,50 @@ export default function Mesario() {
               </>
             )}
 
+            {/* Campos específicos para Professor */}
+            {eleitorType === 'professor' && (
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Curso/Disciplina</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Matemática"
+                  value={formData.curso}
+                  onChange={(e) => setFormData({ ...formData, curso: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                />
+              </div>
+            )}
+
+            {/* Campos específicos para Funcionário */}
+            {eleitorType === 'funcionario' && (
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">Atribuição/Cargo</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Secretária"
+                  value={formData.atribuicao}
+                  onChange={(e) => setFormData({ ...formData, atribuicao: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                />
+              </div>
+            )}
+
             {/* Botões de Ação */}
-            <div className="flex gap-3 pt-4 border-t border-slate-100">
+            <div className="flex gap-2 pt-3 border-t border-slate-100">
               <button
                 onClick={() => {
                   setShowModal(false);
-                  setFormData({ nome: '', cgm: '', serie: '', turma: '', sexo: 'M' });
+                  setFormData({ nome: '', cgm: '', serie: '', turma: '', sexo: 'M', curso: '', atribuicao: '' });
                   setEleitorType('aluno');
                 }}
-                className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 transition-all"
+                className="flex-1 py-2 px-3 rounded-lg border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50 transition-all"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleAddEleitor}
                 disabled={!formData.nome || !formData.cgm || (eleitorType === 'aluno' && (!formData.serie || !formData.turma))}
-                className="flex-1 py-3 px-4 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-2 px-3 rounded-lg bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Adicionar
               </button>
