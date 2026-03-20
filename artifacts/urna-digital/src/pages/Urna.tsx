@@ -75,12 +75,13 @@ export default function Urna() {
 
   // Sincroniza o step com os cargos disponíveis quando a configuração muda
   useEffect(() => {
-    if (steps.length === 0) {
+    const availableSteps = getAvailableSteps();
+    if (availableSteps.length === 0) {
       setStep('Fim');
-    } else if (!steps.includes(step)) {
-      setStep(steps[0]);
+    } else if (!availableSteps.includes(step)) {
+      setStep(availableSteps[0]);
     }
-  }, [steps, step]);
+  }, [electionConfig.cargos]);
 
   const stepIndex = steps.indexOf(step);
   const totalSteps = steps.length;
