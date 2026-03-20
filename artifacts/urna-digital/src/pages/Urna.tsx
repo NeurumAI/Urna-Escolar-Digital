@@ -176,22 +176,24 @@ export default function Urna() {
   // Define o passo inicial conforme o tipo do votante
   useEffect(() => {
     if (activeVoter) {
-      const startStep: Step = activeVoter.tipo === 'aluno' ? 'Professor' : 'Grêmio';
+      const availableSteps = getAvailableSteps();
+      const startStep: Step = availableSteps.length > 0 ? availableSteps[0] : 'Fim';
       setStep(startStep);
       setNumero('');
       setCandidato(null);
       setIsBranco(false);
     }
-  }, [activeVoter]);
+  }, [activeVoter, electionConfig]);
 
   useEffect(() => {
     if (step === 'Fim') {
       const timer = setTimeout(() => {
-        setStep('Professor');
+        const availableSteps = getAvailableSteps();
+        setStep(availableSteps.length > 0 ? availableSteps[0] : 'Fim');
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [step]);
+  }, [step, electionConfig]);
 
 
   // TELA DE BLOQUEIO (ELEIÇÃO FECHADA)
@@ -296,9 +298,9 @@ export default function Urna() {
                 </div>
                 <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-tight">Seu voto para:</p>
                 <h2 className="text-lg md:text-3xl font-black text-slate-900 uppercase tracking-tighter leading-tight">
-                  {step === 'Professor' ? 'Professor de Turma' : step === 'Representante' ? 'Líder de Turma' : 'Grêmio Estudantil'}
+                  {step}
                 </h2>
-                {step === 'Representante' && activeVoter && (
+                {step !== 'Grêmio' && activeVoter && (
                   <p className="text-[9px] md:text-xs font-medium text-slate-400 uppercase">
                     Turma: {activeVoter.serie} {activeVoter.turma}
                   </p>
