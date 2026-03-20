@@ -266,6 +266,17 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
           setIsElectionOpenLocal(activeElection.status === 'aberta');
           setSchoolName(activeElection.school_name || '');
           setElectionTitle(activeElection.title || '');
+          // Load election config if it exists
+          if (activeElection.config) {
+            try {
+              const config = typeof activeElection.config === 'string' 
+                ? JSON.parse(activeElection.config) 
+                : activeElection.config;
+              setElectionConfigLocal(config);
+            } catch (e) {
+              console.error('Error parsing election config:', e);
+            }
+          }
         }
         if (historyData) setHistory(historyData);
         if (votesData) {
@@ -354,6 +365,17 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
           setIsElectionOpenLocal(data.status === 'aberta');
           setSchoolName(data.school_name || '');
           setElectionTitle(data.title || '');
+          // Load election config if it exists
+          if (data.config) {
+            try {
+              const config = typeof data.config === 'string' 
+                ? JSON.parse(data.config) 
+                : data.config;
+              setElectionConfigLocal(config);
+            } catch (e) {
+              console.error('Error parsing election config:', e);
+            }
+          }
         }
       })
       .subscribe();
