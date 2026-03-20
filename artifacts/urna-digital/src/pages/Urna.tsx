@@ -38,7 +38,7 @@ const playConfirmBeep = () => {
   }
 };
 
-type Step = 'Professor' | 'Representante' | 'Grêmio' | 'Fim';
+type Step = string | 'Fim';
 
 export default function Urna() {
   const { 
@@ -57,23 +57,18 @@ export default function Urna() {
   const [candidato, setCandidato] = useState<any>(null);
   const [isBranco, setIsBranco] = useState(false);
 
-  // Determina se o votante é aluno (vota 3x) ou professor/funcionario (vota 1x no grêmio)
+  // Determina se o votante é aluno (vota em todos os cargos) ou professor/funcionario (vota só em Grêmio)
   const isAluno = activeVoter?.tipo === 'aluno';
 
   // Passos disponíveis por tipo de votante e configuração de eleição
   const getAvailableSteps = (): Step[] => {
     if (!isAluno) {
-      return ['Grêmio']; // Professors and staff only vote for Gremio
+      // Professors and staff only vote for Gremio
+      return electionConfig.cargos.includes('Grêmio') ? ['Grêmio'] : [];
     }
 
-    // For students, build steps based on election config
-    const availableSteps: ('Professor' | 'Representante' | 'Grêmio')[] = [];
-    if (electionConfig.professor) availableSteps.push('Professor');
-    if (electionConfig.representante) availableSteps.push('Representante');
-    if (electionConfig.gremio) availableSteps.push('Grêmio');
-
-    // Limit to studentVotesAllowed
-    return availableSteps.slice(0, electionConfig.studentVotesAllowed) as Step[];
+    // For students, show all available positions
+    return electionConfig.cargos;
   };
 
   const steps: Step[] = getAvailableSteps();
@@ -81,9 +76,14 @@ export default function Urna() {
   const stepIndex = steps.indexOf(step);
   const totalSteps = steps.length;
 
-  // Verifica se um candidato Representante ou Professor pertence à turma do eleitor
-  const isRepresentanteElegivel = (c: any): boolean => {
-    if (!activeVoter) return false;
+  // Verifica se um candidato pertence à turma do eleitor (para cargos que não são Grêmio)
+  const isCandidatoElegivel = (c: any): boolean => {
+    if (!activeVoter || activeVoter.tipo !== 'aluno') return false;
+    
+    // Grêmio é aberto a todos (sem restrição de turma)
+    if (c.cargo === 'Grêmio') return true;
+    
+    // Outros cargos: valida série-turma
     const grupoUpper = c.grupo.trim().toUpperCase();
     const turmaUpper = activeVoter.turma.trim().toUpperCase();
     const grupoEndsWithTurma = grupoUpper.endsWith(turmaUpper) ||
@@ -92,13 +92,6 @@ export default function Urna() {
     const grupoYear = c.grupo.match(/\d+/)?.[0] ?? '';
     const yearsMatch = serieYear && grupoYear ? serieYear === grupoYear : true;
     return grupoEndsWithTurma && yearsMatch;
-  };
-
-  // Para professor, também verifica série-turma
-  const isProfessorElegivel = (c: any): boolean => {
-    if (!activeVoter || activeVoter.tipo !== 'aluno') return false;
-    // Professor deve ser da mesma série-turma
-    return isRepresentanteElegivel(c);
   };
 
   const handleNumber = useCallback((num: string) => {
@@ -115,11 +108,8 @@ export default function Urna() {
       let found: any = candidatos.find(c => c.numero === novoNumero && c.cargo === step);
       
       if (found) {
-        // Para Representante e Professor, o candidato deve ser da turma do eleitor
-        if (step === 'Representante' && !isRepresentanteElegivel(found)) {
-          found = undefined;
-        }
-        if (step === 'Professor' && !isProfessorElegivel(found)) {
+        // Para cargos que não são Grêmio, valida série-turma
+        if (!isCandidatoElegivel(found)) {
           found = undefined;
         }
         setCandidato(found || 'nulo');

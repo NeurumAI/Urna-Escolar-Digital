@@ -1,4 +1,4 @@
-import { useState, useRef, ChangeEvent, FormEvent } from 'react';
+import React, { useState, useRef, ChangeEvent, FormEvent } from 'react';
 import * as XLSX from 'xlsx';
 import { 
   Users, 
@@ -37,7 +37,8 @@ export default function Cadastro() {
     addCandidato, 
     addCandidatosBulk,
     removeCandidato,
-    removeCandidatosBulk
+    removeCandidatosBulk,
+    electionConfig
   } = useVote();
   const [activeTab, setActiveTab] = useState<'eleitores' | 'candidatos'>('eleitores');
   const [eleitorSearch, setEleitorSearch] = useState('');
@@ -53,11 +54,18 @@ export default function Cadastro() {
   const [newNome, setNewNome] = useState('');
   const [newNumero, setNewNumero] = useState('');
   const [newNumDigitos, setNewNumDigitos] = useState(5);
-  const [newCargo, setNewCargo] = useState<'Professor' | 'Representante' | 'Grêmio'>('Professor');
+  const [newCargo, setNewCargo] = useState('');
   const [newGrupo, setNewGrupo] = useState('');
   const [newFoto, setNewFoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const spreadsheetInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize newCargo with first available cargo
+  React.useEffect(() => {
+    if (newCargo === '' && electionConfig.cargos.length > 0) {
+      setNewCargo(electionConfig.cargos[0]);
+    }
+  }, [electionConfig.cargos, newCargo]);
 
   // Form states for new eleitor
   const [newEleitorNome, setNewEleitorNome] = useState('');
@@ -616,9 +624,9 @@ export default function Cadastro() {
                         onChange={(e) => setNewCargo(e.target.value as any)}
                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all"
                       >
-                        <option value="Professor">Professor</option>
-                        <option value="Representante">Representante</option>
-                        <option value="Grêmio">Grêmio</option>
+                        {electionConfig.cargos.map((cargo) => (
+                          <option key={cargo} value={cargo}>{cargo}</option>
+                        ))}
                       </select>
                     </div>
                   </div>

@@ -16,12 +16,8 @@ export interface VotoDetalhado {
 }
 
 export interface ElectionConfig {
-  // Which election types are available
-  professor: boolean;
-  representante: boolean;
-  gremio: boolean;
-  // How many of the above 3 can students vote for (1, 2, or 3)
-  studentVotesAllowed: 1 | 2 | 3;
+  // Available cargo (positions) for this election
+  cargos: string[]; // e.g., ['Professor', 'Representante', 'Grêmio']
 }
 
 export interface ElectionRecord {
@@ -95,10 +91,7 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
   const [schoolName, setSchoolName] = useState('');
   const [electionTitle, setElectionTitle] = useState('');
   const [electionConfig, setElectionConfigLocal] = useState<ElectionConfig>({
-    professor: true,
-    representante: true,
-    gremio: true,
-    studentVotesAllowed: 3
+    cargos: ['Professor', 'Representante', 'Grêmio']
   });
   const [votosEspeciais, setVotosEspeciais] = useState({
     branco: { Professor: 0, Representante: 0, Grêmio: 0 },

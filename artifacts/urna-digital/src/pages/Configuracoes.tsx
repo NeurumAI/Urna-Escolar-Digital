@@ -213,53 +213,47 @@ export default function Configuracoes() {
               {/* Voting positions */}
               <div className="space-y-3">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Cargos disponíveis para votação</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { key: 'professor', label: 'Professor' },
-                    { key: 'representante', label: 'Representante' },
-                    { key: 'gremio', label: 'Grêmio' }
-                  ].map(({ key, label }) => (
-                    <button
-                      key={key}
-                      onClick={() => setElectionConfig({
-                        ...electionConfig,
-                        [key]: !electionConfig[key as keyof typeof electionConfig]
-                      })}
-                      className={cn(
-                        "p-4 rounded-xl border-2 transition-all font-bold text-sm",
-                        electionConfig[key as keyof typeof electionConfig]
-                          ? "bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm"
-                          : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
-                      )}
-                    >
-                      {electionConfig[key as keyof typeof electionConfig] ? '✓ ' : '○ '}{label}
-                    </button>
+                <p className="text-xs text-slate-500">Os alunos votarão em todos os cargos listados. A comunidade escolar vota apenas em Grêmio.</p>
+                
+                <div className="space-y-2">
+                  {electionConfig.cargos.map((cargo, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                      <span className="text-sm font-bold text-slate-700 flex-1">{cargo}</span>
+                      <button
+                        onClick={() => setElectionConfig({
+                          cargos: electionConfig.cargos.filter((_, i) => i !== idx)
+                        })}
+                        className="px-3 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                      >
+                        Remover
+                      </button>
+                    </div>
                   ))}
                 </div>
-              </div>
 
-              {/* Student votes allowed */}
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Quantidade de votações para alunos</label>
-                <p className="text-xs text-slate-500">Quantos cargos cada aluno pode votar (dos disponíveis acima)?</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {[1, 2, 3].map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => setElectionConfig({
-                        ...electionConfig,
-                        studentVotesAllowed: num as 1 | 2 | 3
-                      })}
-                      className={cn(
-                        "p-4 rounded-xl border-2 transition-all font-bold text-sm",
-                        electionConfig.studentVotesAllowed === num
-                          ? "bg-violet-50 border-violet-300 text-violet-700 shadow-sm"
-                          : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
-                      )}
-                    >
-                      {num === 1 ? '1 Voto' : `${num} Votos`}
-                    </button>
-                  ))}
+                {/* Add new cargo */}
+                <div className="flex gap-2 mt-4">
+                  <input
+                    type="text"
+                    id="newCargo"
+                    placeholder="Ex: Conselheiro, Tesoureiro..."
+                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900"
+                  />
+                  <button
+                    onClick={() => {
+                      const input = document.getElementById('newCargo') as HTMLInputElement;
+                      const newCargo = input?.value.trim();
+                      if (newCargo && !electionConfig.cargos.includes(newCargo)) {
+                        setElectionConfig({
+                          cargos: [...electionConfig.cargos, newCargo]
+                        });
+                        input.value = '';
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all"
+                  >
+                    Adicionar
+                  </button>
                 </div>
               </div>
             </div>
