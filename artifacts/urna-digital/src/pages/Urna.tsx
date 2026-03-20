@@ -85,6 +85,21 @@ export default function Urna() {
 
   const stepIndex = steps.indexOf(step);
   const totalSteps = steps.length;
+  
+  // Calcula quantos dígitos mostrar
+  const getDisplayedDigits = (): number => {
+    const candidatosDoStep = candidatos.filter(c => c.cargo === step);
+    
+    // Se há um candidato válido selecionado, usa os dígitos dele
+    if (candidato && candidato !== 'nulo' && candidato.numDigitos) {
+      return candidato.numDigitos;
+    }
+    
+    // Senão, usa o máximo do cargo
+    return Math.max(...candidatosDoStep.map(c => (c.numDigitos || 5)), 5);
+  };
+  
+  const displayedDigits = getDisplayedDigits();
 
   // Verifica se um candidato pertence à turma do eleitor (para cargos que não são Grêmio)
   const isCandidatoElegivel = (c: any): boolean => {
@@ -105,11 +120,9 @@ export default function Urna() {
   };
 
   const handleNumber = useCallback((num: string) => {
-    // Get max digits for candidates in this step
     const candidatosDoStep = candidatos.filter(c => c.cargo === step);
-    const maxDigits = Math.max(...candidatosDoStep.map(c => (c.numDigitos || 5)), 5);
-
-    if (numero.length < maxDigits && !isBranco) {
+    
+    if (!isBranco) {
       const novoNumero = numero + num;
       setNumero(novoNumero);
       playBeep();
@@ -124,8 +137,16 @@ export default function Urna() {
         }
         setCandidato(found || 'nulo');
       } else {
-        // Clear candidate while still typing
-        setCandidato(null);
+        // Check if we should keep typing (haven't reached the max for any candidate that could match)
+        const maxPossibleDigits = Math.max(...candidatosDoStep.map(c => (c.numDigitos || 5)), 5);
+        
+        // If we've reached max digits for this step and no candidate found, don't accept more
+        if (novoNumero.length >= maxPossibleDigits) {
+          setNumero(numero); // Revert the number
+        } else {
+          // Clear candidate while still typing
+          setCandidato(null);
+        }
       }
     }
   }, [numero, isBranco, step, candidatos, activeVoter]);
@@ -319,7 +340,7 @@ export default function Urna() {
 
             {/* Slots de Número */}
             <div className="flex gap-1.5 md:gap-3 mb-4 md:mb-10 shrink-0">
-              {[0, 1, 2, 3, 4].map((i) => (
+              {Array.from({ length: displayedDigits }).map((_, i) => (
                 <div 
                   key={i}
                   className={`w-8 h-12 md:w-14 md:h-20 border-2 flex items-center justify-center text-2xl md:text-5xl font-black ${
