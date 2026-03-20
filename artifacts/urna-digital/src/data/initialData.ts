@@ -28,6 +28,7 @@ export interface Candidato {
   foto?: string;
   votos?: number;
   votosDetalhados?: VotoDetalhado[];
+  numDigitos?: number; // 2-5 dígitos (default 5)
 }
 
 export const INITIAL_VOTERS: Eleitor[] = [

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useVote } from '../context/VoteContext';
 
-// Sons da Urna (Simulados)
+// Sons da Urna
 const playBeep = () => {
   try {
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -20,14 +20,19 @@ const playBeep = () => {
 
 const playConfirmBeep = () => {
   try {
-    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    oscillator.type = 'square';
-    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
-    oscillator.connect(audioCtx.destination);
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.5);
+    // Try to play the actual confirmation sound file
+    const audio = new Audio('/sounds/confirma-urna.mp3');
+    audio.play().catch(() => {
+      // Fallback to synthesized beep if file doesn't play
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      oscillator.type = 'square';
+      oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
+      oscillator.connect(audioCtx.destination);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.5);
+    });
   } catch (e) {
     console.log('Audio not supported or blocked');
   }
@@ -45,6 +50,7 @@ export default function Urna() {
     schoolName,
     electionTitle,
     currentUrnaId,
+    electionConfig,
   } = useVote();
   const [step, setStep] = useState<Step>('Professor');
   const [numero, setNumero] = useState('');
@@ -54,10 +60,23 @@ export default function Urna() {
   // Determina se o votante é aluno (vota 3x) ou professor/funcionario (vota 1x no grêmio)
   const isAluno = activeVoter?.tipo === 'aluno';
 
-  // Passos disponíveis por tipo de votante
-  const steps: Step[] = isAluno
-    ? ['Professor', 'Representante', 'Grêmio']
-    : ['Grêmio'];
+  // Passos disponíveis por tipo de votante e configuração de eleição
+  const getAvailableSteps = (): Step[] => {
+    if (!isAluno) {
+      return ['Grêmio']; // Professors and staff only vote for Gremio
+    }
+
+    // For students, build steps based on election config
+    const availableSteps: ('Professor' | 'Representante' | 'Grêmio')[] = [];
+    if (electionConfig.professor) availableSteps.push('Professor');
+    if (electionConfig.representante) availableSteps.push('Representante');
+    if (electionConfig.gremio) availableSteps.push('Grêmio');
+
+    // Limit to studentVotesAllowed
+    return availableSteps.slice(0, electionConfig.studentVotesAllowed) as Step[];
+  };
+
+  const steps: Step[] = getAvailableSteps();
 
   const stepIndex = steps.indexOf(step);
   const totalSteps = steps.length;
@@ -83,21 +102,30 @@ export default function Urna() {
   };
 
   const handleNumber = useCallback((num: string) => {
-    if (numero.length < 5 && !isBranco) {
+    // Get max digits for candidates in this step
+    const candidatosDoStep = candidatos.filter(c => c.cargo === step);
+    const maxDigits = Math.max(...candidatosDoStep.map(c => (c.numDigitos || 5)), 5);
+
+    if (numero.length < maxDigits && !isBranco) {
       const novoNumero = numero + num;
       setNumero(novoNumero);
       playBeep();
       
-      if (novoNumero.length === 5) {
-        let found: any = candidatos.find(c => c.numero === novoNumero && c.cargo === step);
+      // Try to find candidate with this number
+      let found: any = candidatos.find(c => c.numero === novoNumero && c.cargo === step);
+      
+      if (found) {
         // Para Representante e Professor, o candidato deve ser da turma do eleitor
-        if (found && step === 'Representante' && !isRepresentanteElegivel(found)) {
+        if (step === 'Representante' && !isRepresentanteElegivel(found)) {
           found = undefined;
         }
-        if (found && step === 'Professor' && !isProfessorElegivel(found)) {
+        if (step === 'Professor' && !isProfessorElegivel(found)) {
           found = undefined;
         }
         setCandidato(found || 'nulo');
+      } else {
+        // Clear candidate while still typing
+        setCandidato(null);
       }
     }
   }, [numero, isBranco, step, candidatos, activeVoter]);

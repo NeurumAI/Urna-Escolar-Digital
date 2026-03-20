@@ -15,6 +15,15 @@ export interface VotoDetalhado {
   turno: string;
 }
 
+export interface ElectionConfig {
+  // Which election types are available
+  professor: boolean;
+  representante: boolean;
+  gremio: boolean;
+  // How many of the above 3 can students vote for (1, 2, or 3)
+  studentVotesAllowed: 1 | 2 | 3;
+}
+
 export interface ElectionRecord {
   id: string;
   date: string;
@@ -27,6 +36,7 @@ export interface ElectionRecord {
     nulo: Record<string, number>;
   };
   totalVotos: number;
+  config?: ElectionConfig;
 }
 
 interface VoteContextType {
@@ -36,6 +46,7 @@ interface VoteContextType {
   isElectionOpen: boolean;
   schoolName: string;
   electionTitle: string;
+  electionConfig: ElectionConfig;
   votosEspeciais: {
     branco: Record<string, number>;
     nulo: Record<string, number>;
@@ -50,6 +61,7 @@ interface VoteContextType {
   setIsElectionOpen: (open: boolean) => Promise<void>;
   setSchoolName: (name: string) => Promise<void>;
   setElectionTitle: (title: string) => Promise<void>;
+  setElectionConfig: (config: ElectionConfig) => void;
   resetDatabase: () => Promise<void>;
   resetVotes: () => Promise<void>;
   resetStudents: () => Promise<void>;
@@ -82,6 +94,12 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
   const [isElectionOpen, setIsElectionOpenLocal] = useState(false);
   const [schoolName, setSchoolName] = useState('');
   const [electionTitle, setElectionTitle] = useState('');
+  const [electionConfig, setElectionConfigLocal] = useState<ElectionConfig>({
+    professor: true,
+    representante: true,
+    gremio: true,
+    studentVotesAllowed: 3
+  });
   const [votosEspeciais, setVotosEspeciais] = useState({
     branco: { Professor: 0, Representante: 0, Grêmio: 0 },
     nulo: { Professor: 0, Representante: 0, Grêmio: 0 }
@@ -512,6 +530,23 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const setElectionConfig = (config: ElectionConfig) => {
+    setElectionConfigLocal(config);
+    // Save to database asynchronously without blocking UI
+    (async () => {
+      try {
+        await supabase
+          .from('elections')
+          .update({ 
+            config: JSON.stringify(config)
+          })
+          .eq('id', 'active');
+      } catch (error) {
+        handleSupabaseError(error, OperationType.WRITE, 'elections/active');
+      }
+    })();
+  };
+
   const resetCollection = async (collName: string) => {
     console.log(`Limpando coleção: ${collName}...`);
     let result;
@@ -727,6 +762,7 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
       isElectionOpen,
       schoolName,
       electionTitle,
+      electionConfig,
       votosEspeciais,
       history,
       urnas,
@@ -738,6 +774,7 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
       setIsElectionOpen,
       setSchoolName: setSchoolNameSupabase,
       setElectionTitle: setElectionTitleSupabase,
+      setElectionConfig,
       resetDatabase,
       resetVotes,
       resetStudents,

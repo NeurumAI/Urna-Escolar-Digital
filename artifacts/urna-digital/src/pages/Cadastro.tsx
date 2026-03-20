@@ -52,6 +52,7 @@ export default function Cadastro() {
   // Form states for new candidate
   const [newNome, setNewNome] = useState('');
   const [newNumero, setNewNumero] = useState('');
+  const [newNumDigitos, setNewNumDigitos] = useState(5);
   const [newCargo, setNewCargo] = useState<'Professor' | 'Representante' | 'Grêmio'>('Professor');
   const [newGrupo, setNewGrupo] = useState('');
   const [newFoto, setNewFoto] = useState<string | null>(null);
@@ -152,7 +153,7 @@ export default function Cadastro() {
 
   const handleAddCandidato = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newNome || newNumero.length !== 5) return;
+    if (!newNome || newNumero.length !== newNumDigitos || newNumDigitos < 2 || newNumDigitos > 5) return;
 
     const newCandidato: Candidato = {
       id: Math.random().toString(36).substr(2, 9),
@@ -161,6 +162,7 @@ export default function Cadastro() {
       cargo: newCargo,
       grupo: newGrupo || (newCargo === 'Professor' ? 'Docentes' : 'Estudantes'),
       foto: newFoto || undefined,
+      numDigitos: newNumDigitos,
     };
 
     try {
@@ -169,6 +171,7 @@ export default function Cadastro() {
       setNewNumero('');
       setNewGrupo('');
       setNewFoto(null);
+      setNewNumDigitos(5);
     } catch {
       // error already shown via context error state
     }
@@ -578,14 +581,31 @@ export default function Cadastro() {
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all" 
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-500 uppercase">Número (5 dígitos)</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase">Dígitos</label>
+                      <select 
+                        value={newNumDigitos}
+                        onChange={(e) => {
+                          setNewNumDigitos(parseInt(e.target.value));
+                          setNewNumero('');
+                        }}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all"
+                      >
+                        <option value={2}>2 dígitos</option>
+                        <option value={3}>3 dígitos</option>
+                        <option value={4}>4 dígitos</option>
+                        <option value={5}>5 dígitos</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-slate-500 uppercase">Número</label>
                       <input 
                         type="text" 
-                        maxLength={5} 
+                        maxLength={newNumDigitos} 
                         value={newNumero}
-                        onChange={(e) => setNewNumero(e.target.value.replace(/\D/g, ''))}
+                        onChange={(e) => setNewNumero(e.target.value.replace(/\D/g, '').slice(0, newNumDigitos))}
+                        placeholder={`0-${'9'.repeat(newNumDigitos)}`}
                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all" 
                       />
                     </div>

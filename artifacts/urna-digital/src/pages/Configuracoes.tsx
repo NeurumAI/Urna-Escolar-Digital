@@ -26,6 +26,8 @@ export default function Configuracoes() {
     setSchoolName, 
     electionTitle, 
     setElectionTitle,
+    electionConfig,
+    setElectionConfig,
     resetDatabase,
     resetVotes,
     resetStudents,
@@ -196,6 +198,69 @@ export default function Configuracoes() {
                   onChange={(e) => setElectionTitle(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 outline-none transition-all"
                 />
+              </div>
+            </div>
+          </section>
+
+          {/* ELECTION CONFIGURATION */}
+          <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+              <Settings size={20} className="text-slate-400" />
+              Configuração da Votação
+            </h3>
+            
+            <div className="space-y-6">
+              {/* Voting positions */}
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Cargos disponíveis para votação</label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { key: 'professor', label: 'Professor' },
+                    { key: 'representante', label: 'Representante' },
+                    { key: 'gremio', label: 'Grêmio' }
+                  ].map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setElectionConfig({
+                        ...electionConfig,
+                        [key]: !electionConfig[key as keyof typeof electionConfig]
+                      })}
+                      className={cn(
+                        "p-4 rounded-xl border-2 transition-all font-bold text-sm",
+                        electionConfig[key as keyof typeof electionConfig]
+                          ? "bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                      )}
+                    >
+                      {electionConfig[key as keyof typeof electionConfig] ? '✓ ' : '○ '}{label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Student votes allowed */}
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Quantidade de votações para alunos</label>
+                <p className="text-xs text-slate-500">Quantos cargos cada aluno pode votar (dos disponíveis acima)?</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {[1, 2, 3].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => setElectionConfig({
+                        ...electionConfig,
+                        studentVotesAllowed: num as 1 | 2 | 3
+                      })}
+                      className={cn(
+                        "p-4 rounded-xl border-2 transition-all font-bold text-sm",
+                        electionConfig.studentVotesAllowed === num
+                          ? "bg-violet-50 border-violet-300 text-violet-700 shadow-sm"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
+                      )}
+                    >
+                      {num === 1 ? '1 Voto' : `${num} Votos`}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </section>
