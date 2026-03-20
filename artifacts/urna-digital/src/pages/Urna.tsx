@@ -73,6 +73,15 @@ export default function Urna() {
 
   const steps: Step[] = getAvailableSteps();
 
+  // Sincroniza o step com os cargos disponíveis quando a configuração muda
+  useEffect(() => {
+    if (steps.length === 0) {
+      setStep('Fim');
+    } else if (!steps.includes(step)) {
+      setStep(steps[0]);
+    }
+  }, [steps, step]);
+
   const stepIndex = steps.indexOf(step);
   const totalSteps = steps.length;
 
