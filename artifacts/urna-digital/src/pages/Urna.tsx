@@ -178,6 +178,8 @@ export default function Urna() {
     if (activeVoter) {
       const availableSteps = getAvailableSteps();
       const startStep: Step = availableSteps.length > 0 ? availableSteps[0] : 'Fim';
+      console.log('🎯 Available steps:', availableSteps);
+      console.log('🎯 Starting with step:', startStep);
       setStep(startStep);
       setNumero('');
       setCandidato(null);
@@ -297,7 +299,7 @@ export default function Urna() {
                   )}
                 </div>
                 <p className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-tight">Seu voto para:</p>
-                <h2 className="text-lg md:text-3xl font-black text-slate-900 uppercase tracking-tighter leading-tight">
+                <h2 className="text-lg md:text-3xl font-black text-slate-900 tracking-tighter leading-tight">
                   {step}
                 </h2>
                 {step !== 'Grêmio' && activeVoter && (

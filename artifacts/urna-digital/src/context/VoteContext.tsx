@@ -96,7 +96,9 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem('electionConfig');
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          console.log('📦 Loaded config from localStorage:', parsed);
+          return parsed;
         } catch (e) {
           console.error('Error parsing saved config:', e);
         }
@@ -546,10 +548,12 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setElectionConfig = (config: ElectionConfig) => {
+    console.log('💾 Saving config:', config);
     setElectionConfigLocal(config);
     // Save to localStorage for persistence
     try {
       localStorage.setItem('electionConfig', JSON.stringify(config));
+      console.log('✅ Config saved to localStorage');
     } catch (e) {
       console.error('Error saving config to localStorage:', e);
     }
