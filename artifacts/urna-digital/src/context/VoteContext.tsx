@@ -90,8 +90,19 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
   const [isElectionOpen, setIsElectionOpenLocal] = useState(false);
   const [schoolName, setSchoolName] = useState('');
   const [electionTitle, setElectionTitle] = useState('');
-  const [electionConfig, setElectionConfigLocal] = useState<ElectionConfig>({
-    cargos: ['Professor', 'Representante', 'Grêmio']
+  // Initialize config from localStorage or use defaults
+  const [electionConfig, setElectionConfigLocal] = useState<ElectionConfig>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('electionConfig');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Error parsing saved config:', e);
+        }
+      }
+    }
+    return { cargos: ['Professor', 'Representante', 'Grêmio'] };
   });
   const [votosEspeciais, setVotosEspeciais] = useState({
     branco: { Professor: 0, Representante: 0, Grêmio: 0 },
@@ -266,17 +277,6 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
           setIsElectionOpenLocal(activeElection.status === 'aberta');
           setSchoolName(activeElection.school_name || '');
           setElectionTitle(activeElection.title || '');
-          // Load election config if it exists
-          if (activeElection.config) {
-            try {
-              const config = typeof activeElection.config === 'string' 
-                ? JSON.parse(activeElection.config) 
-                : activeElection.config;
-              setElectionConfigLocal(config);
-            } catch (e) {
-              console.error('Error parsing election config:', e);
-            }
-          }
         }
         if (historyData) setHistory(historyData);
         if (votesData) {
@@ -547,19 +547,12 @@ export function VoteProvider({ children }: { children: React.ReactNode }) {
 
   const setElectionConfig = (config: ElectionConfig) => {
     setElectionConfigLocal(config);
-    // Save to database asynchronously without blocking UI
-    (async () => {
-      try {
-        await supabase
-          .from('elections')
-          .update({ 
-            config: JSON.stringify(config)
-          })
-          .eq('id', 'active');
-      } catch (error) {
-        handleSupabaseError(error, OperationType.WRITE, 'elections/active');
-      }
-    })();
+    // Save to localStorage for persistence
+    try {
+      localStorage.setItem('electionConfig', JSON.stringify(config));
+    } catch (e) {
+      console.error('Error saving config to localStorage:', e);
+    }
   };
 
   const resetCollection = async (collName: string) => {
