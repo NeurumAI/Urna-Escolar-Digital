@@ -215,13 +215,32 @@ export default function Configuracoes() {
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Cargos disponíveis para votação</label>
                 <p className="text-xs text-slate-500">Os alunos votarão em todos os cargos listados. A comunidade escolar vota apenas em Grêmio.</p>
                 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {electionConfig.cargos.map((cargo, idx) => (
                     <div key={idx} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
                       <span className="text-sm font-bold text-slate-700 flex-1">{cargo}</span>
+                      <div className="flex items-center gap-1">
+                        <label className="text-xs text-slate-500 font-bold">Dígitos:</label>
+                        <input
+                          type="number"
+                          min="2"
+                          max="5"
+                          defaultValue={electionConfig.cargoDigitos?.[cargo] || 5}
+                          onChange={(e) => setElectionConfig({
+                            ...electionConfig,
+                            cargoDigitos: {
+                              ...electionConfig.cargoDigitos,
+                              [cargo]: parseInt(e.target.value) || 5
+                            }
+                          })}
+                          className="w-12 px-2 py-1 bg-white border border-slate-300 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-slate-900/5"
+                        />
+                      </div>
                       <button
                         onClick={() => setElectionConfig({
-                          cargos: electionConfig.cargos.filter((_, i) => i !== idx)
+                          cargos: electionConfig.cargos.filter((_, i) => i !== idx),
+                          cargoDigitos: electionConfig.cargoDigitos ? 
+                            Object.fromEntries(Object.entries(electionConfig.cargoDigitos).filter(([k]) => k !== cargo)) : {}
                         })}
                         className="px-3 py-1 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                       >
@@ -245,7 +264,11 @@ export default function Configuracoes() {
                       const newCargo = input?.value.trim();
                       if (newCargo && !electionConfig.cargos.includes(newCargo)) {
                         setElectionConfig({
-                          cargos: [...electionConfig.cargos, newCargo]
+                          cargos: [...electionConfig.cargos, newCargo],
+                          cargoDigitos: {
+                            ...electionConfig.cargoDigitos,
+                            [newCargo]: 5
+                          }
                         });
                         input.value = '';
                       }

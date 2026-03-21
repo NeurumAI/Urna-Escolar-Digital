@@ -86,25 +86,18 @@ export default function Urna() {
   const stepIndex = steps.indexOf(step);
   const totalSteps = steps.length;
   
-  // Calcula quantos dígitos mostrar
+  // Calcula quantos dígitos mostrar baseado na configuração do cargo
   const getDisplayedDigits = (): number => {
+    // Se o cargo tem um numDigitos configurado na ElectionConfig, usa esse
+    if (electionConfig.cargoDigitos && electionConfig.cargoDigitos[step]) {
+      return electionConfig.cargoDigitos[step];
+    }
+    
     const candidatosDoStep = candidatos.filter(c => c.cargo === step);
     
-    // Procura por um candidato que corresponde ao número atual sendo digitado
-    if (numero.length > 0) {
-      const matchingCandidate = candidatosDoStep.find(c => c.numero.startsWith(numero));
-      if (matchingCandidate && matchingCandidate.numDigitos) {
-        return matchingCandidate.numDigitos;
-      }
-    }
-    
-    // Se candidato já foi encontrado, usa o dele
-    if (candidato && candidato !== 'nulo' && candidato.numDigitos) {
-      return candidato.numDigitos;
-    }
-    
-    // Senão, usa o máximo do cargo
-    return Math.max(...candidatosDoStep.map(c => (c.numDigitos || 5)), 5);
+    // Procura pelo maior numDigitos entre os candidatos desse cargo
+    const maxFromCandidatos = Math.max(...candidatosDoStep.map(c => (c.numDigitos || 5)), 5);
+    return maxFromCandidatos;
   };
   
   const displayedDigits = getDisplayedDigits();
@@ -129,10 +122,15 @@ export default function Urna() {
   };
 
   const handleNumber = useCallback((num: string) => {
-    const candidatosDoStep = candidatos.filter(c => c.cargo === step);
-    
     if (!isBranco) {
       const novoNumero = numero + num;
+      const maxDigits = displayedDigits;
+      
+      // Check if we've exceeded the max digits for this cargo
+      if (novoNumero.length > maxDigits) {
+        return; // Don't add more digits
+      }
+      
       setNumero(novoNumero);
       playBeep();
       
@@ -146,19 +144,11 @@ export default function Urna() {
         }
         setCandidato(found || 'nulo');
       } else {
-        // Check if we should keep typing (haven't reached the max for any candidate that could match)
-        const maxPossibleDigits = Math.max(...candidatosDoStep.map(c => (c.numDigitos || 5)), 5);
-        
-        // If we've reached max digits for this step and no candidate found, don't accept more
-        if (novoNumero.length >= maxPossibleDigits) {
-          setNumero(numero); // Revert the number
-        } else {
-          // Clear candidate while still typing
-          setCandidato(null);
-        }
+        // Clear candidate while still typing
+        setCandidato(null);
       }
     }
-  }, [numero, isBranco, step, candidatos, activeVoter]);
+  }, [numero, isBranco, step, candidatos, activeVoter, displayedDigits]);
 
   const handleBranco = () => {
     if (numero === '') {

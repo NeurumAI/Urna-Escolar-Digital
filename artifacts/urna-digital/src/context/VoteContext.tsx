@@ -18,6 +18,7 @@ export interface VotoDetalhado {
 export interface ElectionConfig {
   // Available cargo (positions) for this election
   cargos: string[]; // e.g., ['Professor', 'Representante', 'Grêmio']
+  cargoDigitos?: Record<string, number>; // e.g., { 'Professor': 5, 'Representante': 2 }
 }
 
 export interface ElectionRecord {
