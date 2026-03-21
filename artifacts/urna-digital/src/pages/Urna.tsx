@@ -90,7 +90,15 @@ export default function Urna() {
   const getDisplayedDigits = (): number => {
     const candidatosDoStep = candidatos.filter(c => c.cargo === step);
     
-    // Se há um candidato válido selecionado, usa os dígitos dele
+    // Procura por um candidato que corresponde ao número atual sendo digitado
+    if (numero.length > 0) {
+      const matchingCandidate = candidatosDoStep.find(c => c.numero.startsWith(numero));
+      if (matchingCandidate && matchingCandidate.numDigitos) {
+        return matchingCandidate.numDigitos;
+      }
+    }
+    
+    // Se candidato já foi encontrado, usa o dele
     if (candidato && candidato !== 'nulo' && candidato.numDigitos) {
       return candidato.numDigitos;
     }
@@ -100,6 +108,7 @@ export default function Urna() {
   };
   
   const displayedDigits = getDisplayedDigits();
+  
 
   // Verifica se um candidato pertence à turma do eleitor (para cargos que não são Grêmio)
   const isCandidatoElegivel = (c: any): boolean => {
